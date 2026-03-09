@@ -57,10 +57,10 @@ class MyPlugin(Star):
             return
         group_id = event.get_group_id()
         if not self.json_path.exists():
-            with open(self.json_path, "w") as f:
+            with open(self.json_path, "w", encoding="utf-8") as f:
                 json.dump({}, f)
 
-        with open(self.json_path, "r") as f:
+        with open(self.json_path, "r", encoding="utf-8") as f:
             data = json.load(f)
 
         if str(group_id) not in data or not isinstance(data[str(group_id)], dict):
@@ -68,7 +68,7 @@ class MyPlugin(Star):
 
         data[str(group_id)]["welcome_text"] = message
 
-        with open(self.json_path, "w") as f:
+        with open(self.json_path, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False)
 
         yield event.plain_result(f"欢迎消息已设置为：{message}")
@@ -81,10 +81,10 @@ class MyPlugin(Star):
             return
         group_id = event.get_group_id()
         if not self.json_path.exists():
-            with open(self.json_path, "w") as f:
+            with open(self.json_path, "w", encoding="utf-8") as f:
                 json.dump({}, f)
 
-        with open(self.json_path, "r") as f:
+        with open(self.json_path, "r", encoding="utf-8") as f:
             data = json.load(f)
 
         if str(group_id) not in data or not isinstance(data[str(group_id)], dict):
@@ -92,7 +92,7 @@ class MyPlugin(Star):
 
         data[str(group_id)]["welcome_img"] = message
 
-        with open(self.json_path, "w") as f:
+        with open(self.json_path, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False)
 
         yield event.plain_result(f"欢迎图片已设置为：{message}")
@@ -109,17 +109,20 @@ class MyPlugin(Star):
             yield event.plain_result("数据文件不存在")
             return
 
-        with open(self.json_path, "r") as f:
+        with open(self.json_path, "r", encoding="utf-8") as f:
             data = json.load(f)
 
         msg = None
         if str(group_id) in data:
             if isinstance(data[str(group_id)], dict) and "welcome_text" in data[str(group_id)]:
                 msg = data[str(group_id)]["welcome_text"]
+                msg = msg.replace("\\n", "\n")
             elif isinstance(data[str(group_id)], str):
                 msg = data[str(group_id)]
+                msg = msg.replace("\\n", "\n")
 
         if msg:
+            msg = msg.replace("\\n", "\n")
             yield event.plain_result(f"欢迎消息为：{msg}")
         else:
             yield event.plain_result("没有设置欢迎消息")
@@ -144,7 +147,7 @@ class MyPlugin(Star):
             yield event.plain_result("数据文件不存在")
             return
 
-        with open(self.json_path, "r") as f:
+        with open(self.json_path, "r", encoding="utf-8") as f:
             data = json.load(f)
 
         image_path = None
@@ -168,7 +171,6 @@ class MyPlugin(Star):
                 yield event.chain_result([Comp.Image.fromFileSystem(local_path)])
             else:
                 yield event.plain_result(f"本地图片文件不存在：{local_path}")
-
 
     @filter.event_message_type(filter.EventMessageType.ALL)
     async def handle_group_add(self, event: AstrMessageEvent):
@@ -194,7 +196,7 @@ class MyPlugin(Star):
             group_image = None
 
             if self.json_path.exists():
-                with open(self.json_path, "r") as f:
+                with open(self.json_path, "r", encoding="utf-8") as f:
                     data = json.load(f)
                     if str(group_id) in data:
                         if isinstance(data[str(group_id)], dict):
@@ -204,6 +206,8 @@ class MyPlugin(Star):
                                 group_image = data[str(group_id)]["welcome_img"]
                         else:
                             welcome_message = data[str(group_id)]
+
+            welcome_message = welcome_message.replace("\\n", "\n")
 
             image_to_use = group_image or (random.choice(self.welcome_img) if self.welcome_img else None)
 
@@ -248,5 +252,5 @@ class MyPlugin(Star):
             client = event.bot
             info = await client.get_stranger_info(user_id=user_id, no_cache=True)
             username = info.get("nickname", "未知用户")
-            goodbye_message = self.bye_text.format(username=username, userid=user_id)
+            goodbye_message = self.bye_text.replace("\\n", "\n").format(username=username, userid=user_id)
             yield event.plain_result(goodbye_message)

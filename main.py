@@ -36,6 +36,8 @@ class MyPlugin(Star):
         self.welcome_img = config.get("welcome_img", [])
         self.bye_text = config.get("bye_text", "群友{username}({userid})退群了!")
         self.bye_img = config.get("bye_img", [])
+        self.kick_text = config.get("kick_text", "群友{username}({userid})被管理员{operator_name}({operator_id})踢出群了!")
+        self.kick_img = config.get("kick_img", [])
 
         # 数据目录
         data_dir = Path("data/hello-bye")
@@ -181,6 +183,7 @@ class MyPlugin(Star):
         raw_message = event.message_obj.raw_message
         if not raw_message or not isinstance(raw_message, dict):
             return
+        logger.debug(f"Received raw message: {raw_message}")
         if raw_message.get("post_type") != "notice":
             return
 
@@ -191,6 +194,12 @@ class MyPlugin(Star):
             if not self.check_send(group_id):
                 return
             user_id = raw_message.get("user_id")
+
+            # 跳过机器人自己进群
+            self_id = event.get_self_id()
+            if str(user_id) == str(self_id):
+                logger.debug(f"Bot self joined group {group_id}, skipping welcome message")
+                return
 
             welcome_message = self.welcome_text
             group_image = None
@@ -247,10 +256,48 @@ class MyPlugin(Star):
             if not self.check_send(group_id):
                 return
             user_id = raw_message.get("user_id")
+            sub_type = raw_message.get("sub_type")
+
             from astrbot.core.platform.sources.aiocqhttp.aiocqhttp_message_event import AiocqhttpMessageEvent
             assert isinstance(event, AiocqhttpMessageEvent)
             client = event.bot
             info = await client.get_stranger_info(user_id=user_id, no_cache=True)
             username = info.get("nickname", "未知用户")
-            goodbye_message = self.bye_text.replace("\\n", "\n").format(username=username, userid=user_id)
-            yield event.plain_result(goodbye_message)
+
+            if sub_type == "kick":
+                # 被踢出群
+                operator_id = raw_message.get("operator_id")
+                operator_info = await client.get_stranger_info(user_id=operator_id, no_cache=True)
+                operator_name = operator_info.get("nickname", "未知管理员")
+
+                message = self.kick_text.replace("\\n", "\n").format(
+                    username=username,
+                    userid=user_id,
+                    operator_name=operator_name,
+                    operator_id=operator_id
+                )
+                image_list = self.kick_img
+            else:
+                # 主动退群 (sub_type == "leave" 或其他)
+                message = self.bye_text.replace("\\n", "\n").format(username=username, userid=user_id)
+                image_list = self.bye_img
+
+            # 构建消息链（支持图片）
+            if image_list:
+                image_to_use = random.choice(image_list)
+                if image_to_use.startswith("http://") or image_to_use.startswith("https://"):
+                    valid_image = await is_valid_image_url(image_to_use)
+                    if valid_image:
+                        yield event.chain_result([Comp.Plain(message), Comp.Image.fromURL(image_to_use)])
+                    else:
+                        logger.warning(f"Invalid image URL: {image_to_use}")
+                        yield event.plain_result(message)
+                else:
+                    local_path = os.path.join(Path("data/hello-bye"), image_to_use)
+                    if os.path.exists(local_path):
+                        yield event.chain_result([Comp.Plain(message), Comp.Image.fromFileSystem(local_path)])
+                    else:
+                        logger.warning(f"Local image not found: {local_path}")
+                        yield event.plain_result(message)
+            else:
+                yield event.plain_result(message)

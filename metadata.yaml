@@ -1,5 +1,8 @@
 name: hello-bye # 这是你的插件的唯一识别名。
 desc: 进群（不同群可自定义）或退群消息提示，支持黑名单 # 插件简短描述
-version: v1.10 # 插件版本号。格式：v1.1.1 或者 v1.1
+version: v1.11 # 插件版本号。格式：v1.1.1 或者 v1.1
 author: tinker # 作者
 repo: https://github.com/1113-yangfanou/astrbot_plugin_hello-bye # 插件的仓库地址
+support_platforms:
+  - aiocqhttp
+astrbot_version: ">=3.5"

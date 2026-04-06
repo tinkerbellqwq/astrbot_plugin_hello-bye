@@ -46,6 +46,18 @@
     "type": "list",
     "default": []
   },
+  "kick_text": {
+    "description": "被踢出群消息",
+    "type": "string",
+    "hint": "填写被踢出群消息，{username}、{userid}、{operator_name}、{operator_id} 会被替换",
+    "default": "群友{username}({userid})被管理员{operator_name}({operator_id})踢出群了!"
+  },
+  "kick_img": {
+    "description": "被踢出群图片",
+    "hint": "填写被踢出群图片URL地址，默认空",
+    "type": "list",
+    "default": []
+  },
   "black_groups": {
     "description": "黑名单",
     "type": "list",

@@ -1,4 +1,5 @@
-name: hello-bye # 这是你的插件的唯一识别名。
+name: astrbot_plugin_hello_bye # 这是你的插件的唯一识别名。
+display-name: hello-bye
 desc: 进群（不同群可自定义）或退群消息提示，支持黑名单 # 插件简短描述
 version: v1.11 # 插件版本号。格式：v1.1.1 或者 v1.1
 author: tinker # 作者
